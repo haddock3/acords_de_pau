@@ -1,0 +1,92 @@
+import pandas as pd
+
+#0.LLEGIM LES DADES
+df = pd.read_csv("data\pax_data_1789_agreements_13-11-19.csv") 
+df['datetime'] = pd.to_datetime(df['Dat'])
+#df = df.set_index('datetime')
+df.drop(['Dat'], axis=1, inplace=True)
+df.head()
+
+#A.ANALISIS GENERAL DE LES DADES
+#1.CREEM UNA TAULA ACORDS I ASSIGNEMS ELS NOMS
+#creem el diccionari
+agreement_stage={'Pre': 'Pre-negotiation/process', 'SubPar': 'Framework-substantive, Partial', 'SubComp': 'Framework-substantive, Comprehensive', 'Imp': 'Implementation/renegotiation', 'Ren': 'Renewal', 'Cea': 'Ceasefire/related', 'Other':'Other'}
+
+#asignem els valors
+for key, value in agreement_stage.items():
+    for i, val in enumerate(df_acords['Agreement stage']):
+        #print(i, key,value, val)
+        if df_acords.loc[i, 'Agreement stage']==key:
+            df_acords.loc[i, 'Agreement stage']=value
+            #print(df_acords.loc[i, 'Agreement stage'])
+df_acords.head()  
+
+#2.CREEM UNA TAULA CLASSIFICACIO DESL ACORDS DE PAU EN FUNCIÓ DE LES SEVES CARACTERISTIQUES(un acord pot tenir una caracteristica o més d'una.
+#CREEM UN DICCIONARI AMB EL NOM DE LES COLUMNES:
+tipologies={'Grups':{'GCh':'Children_Youth','GDis':'Disabled persons', 'GAge':'Elderly / Age', 'GMig':'Migrant workers', 'GRa':'Racial ethnic national groups', 'GRe':'Religious_groups', 'GInd': 'Indigenous people', 'GOth': 'Other groups', 'GRef': 'Refugees/ displaced persons', 'GSoc': 'Social Class'}
+            ,'Gender':{'GeWom': 'Women, girls and gender', 'GeMe': 'Men and Boys', 'GeSo': 'Sexual Orientation', 'GeFa': 'Family'}
+            ,'State definition':{'StGen': 'Nature of State', 'StCon': 'State configuration', 'StSd': 'Self determination', 'StRef': 'Referendum', 'StSym': 'State symbols', 'StInd': 'Independence/secession', 'StUni': 'Accession/unification', 'StBor': 'Border delimitation', 'StXbor': 'Cross-border provision'}
+            ,'Governance':{'Pol': 'Political Institutions', 'ConRen':'Constitutional renewal/affirmation', 'Cons': 'Constitutional reform/making' ,'Ele': 'Elections', 'ElecComm': 'Electoral Commission', 'PolPar': 'Political parties reform', 'Civso': 'Civil Society', 'Tral': 'Traditional/Religious Leaders', 'Pubad': 'Public Administration'}
+            ,'Powersharing':{'Polps': 'Political Powersharing', 'Terps': 'Territorial powersharing', 'Eps': 'Economic powersharing', 'Mps': 'Military powersharing'}
+            ,'Human rights and equality':{'HrGen': 'Human Rights/ Rule of Law', 'EqGen': 'Equality', 'HrDem': 'Democracy', 'Prot': 'Protection measures', 'HrFra': 'Human Rights Framework', 'HrCp': 'Civil and political rights', 'HrSec': 'Socio-economic rights', 'HrNi': 'NHRI (National Human Rights Institution)', 'HrIi': 'Regional or international human rights institutions', 'HrMob': 'mobility/access', 'HrDet': 'Detention Procedures', 'Med': 'Media and communication', 'HrCit': 'Citizenship'}
+            ,'Justice Sector Reform': {'JusCr': 'Criminal Justice and Emergency law', 'JusEm': 'State of Emergency Provisions', 'JusJu': 'Judiciary and courts', 'JusPri': 'Prisons and detention', 'JusTra': 'Traditional/ Religious Laws'}
+            ,'Socio-Economic Reconstruction': {'Dev': 'Development or socio-economic reconstruction', 'NEC': 'National economic plan', 'NatRes': 'Natural resources', 'IntFu': 'International funds', 'Bus': 'Business', 'Tax': 'Taxation', 'Ban': 'Banks'}
+            ,'Land, property, and environment': {'LaRef': 'Land reform/rights', 'LaNom': 'Pastoralist/nomadism rights', 'LaCH': 'Cultural heritage', 'LaEn': 'Environment', 'Wat': 'Water or riparian river rights access'}
+            ,'Security Sector': {'SsrGua': 'Security Sector (General)', 'Ce' : 'Ceasefire', 'SsrPol': 'Police', 'SsrArm': 'Armed Forces', 'SsrDdr': 'DDR', 'SsrInt': 'Intelligence service', 'SsrPsf': 'Rebel/opposition/Para-statal forces', 'SsrFf': 'Withdrawal of foreign forces', 'Cor': 'Corruption', 'SsrCrOcr': 'Crime/Organised crime', 'SsrDrugs': 'Drugs', 'Terr': 'Terrorism'}
+            ,'Transitional Justice': {'TjGen': 'Transitional Justice General', 'TjAm': 'Amnesty/pardon', 'TjMech': 'Mechanism', 'TjPrire': 'Prisoner release', 'TjVet': 'Vetting', 'TjVic': 'Victims', 'TjMis': 'Missing', 'TjRep': 'Reparations', 'TjNR': 'Reconciliation'}
+            ,'Implementation': {'ImUN': 'UN Signatory', 'ImOth': 'Other International Signatory', 'ImRef': 'Referendum for agreement', 'ImPK': 'International Mission/Force/Similar', 'ImE': 'Enforcement Mechanism', 'ImSrc': 'Source'}
+           }
+#ASSIGNEM ELS VALORS
+df_classificacio=pd.DataFrame(columns=['id', 'categoria', 'subcategoria'])
+n=1
+for cat, dic in tipologies.items():
+    #print(cat,dic)
+    for subcat,valor in dic.items():
+        print(n,'cat: ', cat, 'subcat: ', subcat, 'val: ', valor)
+        n=n+1
+        for i, pax in enumerate(df[subcat]):
+            if pax != 0:
+                rdo=[df.loc[i,'AgtId'], cat, valor ]
+                df_classificacio.loc[len(df_classificacio), :] = rdo
+                
+df_classificacio.id = df_classificacio.id.astype(int)
+df_classificacio.head()
+
+#3.AJUNTEM LES DUES TAULES
+acords_de_pau=df_acords.merge(df_classificacio, on='id', how='left')
+acords_de_pau.head()
+
+#4.GRAVEM LES DADES EN CSV PER LLEGIR AMB TABLEAU
+acords_de_pau.to_csv (r'data\acords_de_pau.csv', index = None, header=True, sep=';')
+
+B.PREPARAR DADES PER DESENVOLUPAR UN SANKEY ENTRE TIPOS DE CONFLICTES I REGIONS
+import pandas as pd
+
+#1.PREPARAR LES DADES PER LES REGIONS
+#LLEGUIR
+df = pd.read_csv("data\dades_acords_de_pau.csv", sep=';') 
+print(df.shape)
+#TREURE DUPLICATS
+df = df.drop_duplicates(subset=['id'], keep='first')
+print(df.shape)
+#SELECCIONAR COLUMNES
+df = df[['id','Country', 'Region', 'Status', 'Conflict type', 'Agreement type']]
+#CREAR COLUMNA AMB VALOR REGIO
+df['vizSide']='regio'
+
+#2.PREPARAR LES DADES PELS CONFLICTES
+#LLEGUIR
+df1 = pd.read_csv("data\dades_acords_de_pau.csv", sep=';') 
+#TREURE DUPLICATS
+df1 = df1.drop_duplicates(subset=['id'], keep='first')
+#SELECCIONAR COLUMNES
+df1 = df1[['id','Country', 'Region', 'Status', 'Conflict type', 'Agreement type']]
+#COLUMNA CREADA AMB VALOR REGIO
+df1['vizSide']='conflict'
+
+#3.UNIÓ D TOTES DUES TABLES
+result=pd.concat([df,df1])
+result['count']=1
+
+#4.EXPORTAR DADES PER VISUALITZAR AMB TABLEAU
+result.to_excel("data\sankey.xlsx")
