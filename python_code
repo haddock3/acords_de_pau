@@ -8,8 +8,24 @@ df.drop(['Dat'], axis=1, inplace=True)
 df.head()
 
 #A.ANALISIS GENERAL DE LES DADES
+#0. GESTIO PAISOS
+#fem split de la columna 'Con' i ho passem a files
+df_country=df.join(df['Con'].str.split('/', expand=True).stack().reset_index(level=1, drop=True).rename('country'))
+
 #1.CREEM UNA TAULA ACORDS I ASSIGNEMS ELS NOMS
-#creem el diccionari
+#creem diccionari per columnes
+acords={'AgtId': 'id', 'Con': 'Con', 'country': 'Country', 'Reg': 'Region', 'Status':'Status', 'Lgt':'Num_pages', 'N_characters':'Num_characters', 'datetime':'Datetime', 'Contp':'Conflict type', 'Agtp': 'Agreement type', 'Stage':'Agreement stage'}
+
+selCol=[]
+for key in acords.keys():
+   selCol.append(key)
+ 
+ df_acords = df_country[selCol]
+
+df_acords.rename(columns=acords, inplace=True)
+df_acords = df_acords.reset_index()
+   
+#creem el diccionari per valors columna agreement_stage
 agreement_stage={'Pre': 'Pre-negotiation/process', 'SubPar': 'Framework-substantive, Partial', 'SubComp': 'Framework-substantive, Comprehensive', 'Imp': 'Implementation/renegotiation', 'Ren': 'Renewal', 'Cea': 'Ceasefire/related', 'Other':'Other'}
 
 #asignem els valors
